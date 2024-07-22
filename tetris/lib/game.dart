@@ -16,6 +16,36 @@ class board extends StatefulWidget {
 }
 
 class _boardState extends State<board> {
+  int _seconds = 45;
+  late Timer _timer;
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _seconds--;
+      });
+
+      if (_seconds == 0) {
+        _stopTimer();
+        gameover = true;
+
+      } 
+    });
+  }
+
+  void _stopTimer() {
+    _timer.cancel();
+    
+    gameover = true;
+  }
+
+  void _resetTimer() {
+    setState(() {
+      _seconds = 45;
+    });
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -24,9 +54,12 @@ class _boardState extends State<board> {
   }
 
   void initgame() {
+    score = 0;
+    _resetTimer();
     gameover = false;
     boardinfo = List.generate(boardHeight * boardWidth, (index) => 0);
     initNexts();
+    _startTimer();
     makePiece();
     gameroop();
     readroop();
@@ -35,7 +68,7 @@ class _boardState extends State<board> {
   
 
   nowBlock currentBlock = nowBlock(type: Blocks.I);
-  int gameSpeed = 200;
+  int gameSpeed = 350;
   bool island = false;
   
 
@@ -66,6 +99,9 @@ class _boardState extends State<board> {
   void gameroop() {
     Duration fps = Duration(milliseconds: gameSpeed);
     Timer.periodic(fps, (timer) {
+
+      if(gameover == true) timer.cancel();
+
       bool check = currentBlock.moveDown();
 
       if (check == false) {
@@ -78,8 +114,7 @@ class _boardState extends State<board> {
           checkClear();
           if (isgameover() == true) {
             gameover = true;
-            timer.cancel();
-            widget.bluetoothClassicPlugin.write("ping");
+            _stopTimer();
           }
           else  {
             makePiece();
@@ -111,6 +146,7 @@ class _boardState extends State<board> {
   }
 
   void goDown() {
+    if(gameover == true) return;
     if(ghost == true) return;
     setState(() {
       currentBlock.moveDown();
@@ -119,7 +155,8 @@ class _boardState extends State<board> {
   }
 
   void goLeft() {
-      if(ghost == true) return;
+    if(gameover == true) return;
+    if(ghost == true) return;
     setState(() {
       currentBlock.moveLeft();
       currentBlock.makeGhost();
@@ -128,6 +165,7 @@ class _boardState extends State<board> {
   }
 
   void goRight() {
+    if(gameover == true) return;
     if(ghost == true) return;
     setState(() {
       currentBlock.moveRight();
@@ -145,7 +183,7 @@ class _boardState extends State<board> {
 
     });
   }
-
+  int score = 0;
   void checkClear() {
     for (int i = 0; i < boardHeight; i++) {
       bool check = true;
@@ -157,6 +195,7 @@ class _boardState extends State<board> {
       }
 
       if (check == true) {
+        score += 10;
         boardinfo.removeRange(i * 10, (i + 1) * 10);
         List<int> temp = List.generate(10, (index) => 0);
         temp.addAll(boardinfo);
@@ -166,6 +205,7 @@ class _boardState extends State<board> {
   }
 
   void turnToRight() {
+    if(gameover == true) return;
     if(ghost == true) return;
     setState(() {
       currentBlock.turnRight();
@@ -218,41 +258,58 @@ class _boardState extends State<board> {
           ]
         ),
 
+        Stack(
+          children: [
+            Center(
+                child: Container(
 
-        Center(
-            child: Container(
+                    width: blockSize * boardWidth,
+                    height: blockSize * boardHeight,
+                    child: GridView.builder(
+                      itemCount: boardHeight * boardWidth,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: boardWidth,
+                        childAspectRatio: 1,
+                        mainAxisSpacing: 0,
+                        crossAxisSpacing: 0,
+                      ),
+                      itemBuilder: (BuildContext context, int index) {
+                        if (index < 20) {
+                          return Container(
+                            width: blockSize,
+                            height: blockSize,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(7),
+                                color: getPixelColor(boardinfo[index] <= 0 ? -2 : boardinfo[index])),
+                          );
+                        } else {
+                          return Container(
+                            width: blockSize,
+                            height: blockSize,
+                            decoration: BoxDecoration(
+                                //border: Border.all(color: Colors.white, width: 1),
+                                borderRadius: BorderRadius.circular(7),
+                                color: getPixelColor(boardinfo[index])),
+                          );
+                        }
+                      },
+                    )
+                )
+              ),
 
-                width: blockSize * boardWidth,
-                height: blockSize * boardHeight,
-                child: GridView.builder(
-                  itemCount: boardHeight * boardWidth,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: boardWidth,
-                    childAspectRatio: 1,
-                    mainAxisSpacing: 0,
-                    crossAxisSpacing: 0,
-                  ),
-                  itemBuilder: (BuildContext context, int index) {
-                    if (index < 20) {
-                      return Container(
-                        width: blockSize,
-                        height: blockSize,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(7),
-                            color: getPixelColor(boardinfo[index])),
-                      );
-                    } else {
-                      return Container(
-                        width: blockSize,
-                        height: blockSize,
-                        decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white, width: 1),
-                            borderRadius: BorderRadius.circular(7),
-                            color: getPixelColor(boardinfo[index])),
-                      );
-                    }
-                  },
-                ))),
+              Center(
+                child: Column(
+                  children: [
+                    Text(_seconds.toString(),style: TextStyle(color: Colors.brown,decoration: TextDecoration.none),),
+                    Text("score : "+score.toString(),style: TextStyle(color: Colors.yellow,decoration: TextDecoration.none,fontSize: 20),),
+
+                  ],
+                ),
+              )
+
+
+          ],
+        ),
 
 
         SizedBox(width: screenWidth,height: 10),

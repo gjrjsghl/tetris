@@ -28,6 +28,7 @@ Color getPixelColor(int n) {
 
   if(n == -1) return const Color.fromARGB(255, 189, 182, 182); //ghost
 
+  if(n == -2) return Colors.black;
 
-  return Colors.black;
+  return Color.fromARGB(255, 41, 41, 41);
 }

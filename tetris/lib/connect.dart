@@ -87,7 +87,7 @@ class _connectState extends State<connect> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        appBar: AppBar(
+          appBar: AppBar(
         ),
         body: SingleChildScrollView(
           child: Column(
